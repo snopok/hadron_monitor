@@ -24,7 +24,8 @@ spot_size_15=pd.read_csv('spot_size_15/hadron.dat',delim_whitespace=True,skiprow
 spot_size_17=pd.read_csv('spot_size_17/hadron.dat',delim_whitespace=True,skiprows=3).values
 beam_position_m02_p00=pd.read_csv('beam_position_-0.2_+0.0/hadron.dat',delim_whitespace=True,skiprows=3).values
 beam_position_m01_p00=pd.read_csv('beam_position_-0.1_+0.0/hadron.dat',delim_whitespace=True,skiprows=3).values
-
+beam_position_p00_m02=pd.read_csv('beam_position_+0.0_-0.2/hadron.dat',delim_whitespace=True,skiprows=3).values
+beam_position_p00_p02=pd.read_csv('beam_position_+0.0_+0.2/hadron.dat',delim_whitespace=True,skiprows=3).values
 
 
 #%% missing fins
@@ -333,7 +334,7 @@ legend(('Pencil beam','0.9 mm spot','1.1 mm spot','1.3 mm spot','1.5 mm spot','1
 grid(True)
 
 #%% missing fins vs reduced density - differential histogram
-figure(3,figsize=(9,3))
+figure(9,figsize=(9,3))
 
 subplot(131)
 missing_fins_hist=hist2d(missing_fins[:,0],missing_fins[:,1],50,vmin=0,vmax=4200,range=((-1000.,1000.),(-1000.,1000.)))
@@ -354,4 +355,30 @@ density_missing_fins_diff_hist=imshow(density_90_hist[0]-missing_fins_hist[0],ex
 xlabel('x [mm]')
 ylabel('y [mm]')
 title('Difference between the histograms')
+colorbar()
+
+#%% vertical beam offset -0.2 mm, +0.2 mm, compared to the reference case
+# mind that all of these are using pencil beam
+# using the first 200k entries
+figure(10)
+
+subplot(131)
+beam_position_p00_m02_hist=hist2d(beam_position_p00_m02[:200000,0],beam_position_p00_m02[:200000,1],50,vmin=0,vmax=700,range=((-1000.,1000.),(-1000.,1000.)))
+xlabel('x [mm]')
+ylabel('y [mm]')
+title('x=0, y=-0.2 mm')
+colorbar()
+
+subplot(132)
+reference_hist=hist2d(reference[:200000,0],reference[:200000,1],50,vmin=0,vmax=700,range=((-1000.,1000.),(-1000.,1000.)))
+xlabel('x [mm]')
+ylabel('y [mm]')
+title('x=0, y=0')
+colorbar()
+
+subplot(133)
+beam_position_p00_p02_hist=hist2d(beam_position_p00_p02[:200000,0],beam_position_p00_p02[:200000,1],50,vmin=0,vmax=700,range=((-1000.,1000.),(-1000.,1000.)))
+xlabel('x [mm]')
+ylabel('y [mm]')
+title('x=0, y=+0.2 mm')
 colorbar()

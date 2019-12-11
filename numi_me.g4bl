@@ -1,6 +1,7 @@
+g4ui when=4 "/vis/viewer/scaleTo 10 10 1"
+g4ui when=4 "/vis/viewer/set/style wireframe"
 # QGSP is the default physics use-case for High Energy Physics
 # but QGSP_BERT is better for low-energy simulations
-
 #physics QGSP_BERT
 physics FTFP_BERT
 randomseed time

@@ -1,0 +1,860 @@
+# QGSP is the default physics use-case for High Energy Physics
+# but QGSP_BERT is better for low-energy simulations
+
+#physics QGSP_BERT
+physics FTFP_BERT
+randomseed time
+
+geometry tolerance=0.1 visual=0 printGeometry=0 nPoints=0
+
+trackcuts kill=gamma,neutron,pi0,anti_neutron,kaon0,nu_e,nu_mu,nu_tau,anti_nu_e,anti_nu_mu,anti_nu_tau
+
+#trace nTrace=1000000 format=ascii oneNTuple=1 require=(PDGid==211&&EventID>0)
+
+material Concrete density=2.03 H,0.01 O,0.529 Na,0.016 Hg,0.01 Al,0.034 Si,0.337 K,0.013 Ca,0.044 Fe,0.014 C,0.001
+material VariableDensityAluminum density=2.45 Al,0.891 H,0.0049322974472808 O,0.0585677025527192 N,0.0455
+material VariableDensitySteel density=6.836 Fe,0.853 H,0.0164783573806881 O,0.130521642619312
+material Slab_Stl density=7.8416 C,0.001 Si,0.001 Mn,0.004 Fe,0.982 Ni,0.01 Cu,0.002
+material Blu_Stl density=7.25 Fe,1.0
+material Rebar_Concrete density=2.61 H,0.01 O,0.529 Na,0.016 Hg,0.002 Al,0.034 Si,0.337 K,0.013 Ca,0.044 Fe,0.014 C,0.001
+material Air density=0.00129 N,0.7 O,0.3
+material Shotcrete density=2.09 O,0.361747 Si,0.100031 Al,0.026992 S,0.013217 Ca,0.463835 Fe,0.016087 C,0.018091
+material CT852 density=7.75 C,0.001 Si,0.008 Mn,0.008 Cr,0.13 S,0.00025 P,0.0003 Ti,0.002 Cu,0.003 Ni,0.006 Fe,0.84145
+
+material C12 A=12 Z=6 density=1.78 # TODO: 1.7975
+material C13 A=13.0034 Z=6 density=1.78
+material Target density=1.78 C12,0.9893 C13,0.0107
+
+#param -unset nEvents=1e6
+param -unset field_map_directory=/home/snopok/NOvA/field_maps
+param -unset firstEvent=0
+param -unset lastEvent=1e6
+param -unset spot_size=0.0
+param -unset beam_pos_x=0.0
+param -unset beam_pos_y=-0.2
+param proton_mass=938.2720813 # MeV/c^2
+param proton_energy=120000 # MeV
+param proton_momentum=sqrt($proton_energy*$proton_energy-$proton_mass*$proton_mass)
+                          
+# the beam is nominally headed in the +Z direction
+beam gaussian particle=proton firstEvent=$firstEvent lastEvent=$lastEvent beamZ=-6700.0 \
+    sigmaX=$spot_size sigmaY=$spot_size sigmaXp=0.00 sigmaYp=0.00 \
+    meanMomentum=$proton_momentum sigmaP=0.01*$proton_momentum meanT=0.0 sigmaT=0.0 \
+    beamX=$beam_pos_x beamY=$beam_pos_y
+
+# a reference particle
+reference particle=proton referenceMomentum=$proton_momentum
+
+tube SC01 outerRadius=2230 innerRadius=1009.7 material=Concrete length=676681
+
+tube UpWnAl1S outerRadius=558.8 innerRadius=495.3 material=Al length=25.4
+tube UpWnAl2S outerRadius=533.4 innerRadius=528.6375 material=Al length=152.4
+tube UpWnAl3S outerRadius=558.8 innerRadius=495.3 material=Al length=19.05
+tube UpWnFe1S outerRadius=558.8 innerRadius=495.3 material=Fe length=19.05
+tube UpWnFe2S outerRadius=533.4 innerRadius=528.6375 material=Fe length=152.4
+sphere UpWnSph1 finalTheta=16.175 outerRadius=1779.6002 innerRadius=1778 initialTheta=0 material=Al
+tube DVOL_solid outerRadius=990.6 length=676676.24 material=He
+
+sphere UpWnSph2 finalTheta=26.388 outerRadius=1769.745 innerRadius=1760.22 initialTheta=17.64 material=Fe
+polycone sUpWnPolyCone outerRadius=977.9,976.282992218585,971.384695315888,963.056096409336,951.022146611329,934.830170677897,913.744534334686,886.514971214185,850.778687223094,800.981918535691 \
+                       innerRadius=968.375,966.710918346896,961.66709741964,953.080469975832,940.648093672526,923.865928339261,901.900560420667,873.295332050438,835.158685586818,779.926283094527 \
+                       z=0,33.0397555555556,66.0795111111111,99.1192666666667,132.159022222222,165.198777777778,198.238533333333,231.278288888889,264.318044444444,297.3578 \
+                       material=Fe
+
+group DVOL radius=0 material=He color=1,0,0,0.5
+  place UpWnAl1S z=-338267.127 parent=DVOL_solid
+  place UpWnAl2S z=-338178.227 parent=DVOL_solid
+  place UpWnAl3S z=-338092.502 parent=DVOL_solid
+  place UpWnFe1S z=-338073.452 parent=DVOL_solid
+  place UpWnFe2S z=-337987.727 parent=DVOL_solid
+  place UpWnSph1 z=-339962.045451574 parent=DVOL_solid
+  place UpWnSph2 z=-339617.5688 parent=DVOL_solid
+  place sUpWnPolyCone z=-338338.12 parent=DVOL_solid
+  place DVOL_solid z=0
+endgroup
+
+#place DVOL z=0
+
+tube DNWN outerRadius=990.6 innerRadius=0 length=4.76 material=Fe
+
+tube sDPIP outerRadius=1009.65 length=676681 material=Fe
+
+group DPIP radius=0 material=Fe
+  place DVOL z=-2.38 front=1 parent=sDPIP # moved nested group by half its length
+  place DNWN z=338338.12 parent=sDPIP
+  place sDPIP z=0
+endgroup
+
+#place DPIP z=0
+
+box hole1 width=190.5 height=1085.85 length=304.8 material=VariableDensityAluminum
+
+group Al_BLK1 width=1295.4 height=1295.4 length=304.8 material=Al color=1,0,0,0.5
+  place hole1 rename=+AlholeL x=-552.45 y=-47.625 z=0
+  place hole1 rename=+AlholeR x=+552.45 y=-47.625 z=0
+endgroup
+
+#place Al_BLK1 z=0
+
+group Al_BLK2 width=1295.4 height=1295.4 length=304.8 material=Al
+  place hole1 rename=+AlholeL x=-552.45 y=-47.625 z=0
+  place hole1 rename=+AlholeR x=+552.45 y=-47.625 z=0
+endgroup  
+
+group Al_BLK3 width=1295.4 height=1295.4 length=304.8 material=Al
+  place hole1 rename=+AlholeL x=-552.45 y=-47.625 z=0
+  place hole1 rename=+AlholeR x=+552.45 y=-47.625 z=0
+endgroup  
+
+group Al_BLK4 width=1295.4 height=1295.4 length=304.8 material=Al
+  place hole1 rename=+AlholeL x=-552.45 y=-47.625 z=0
+  place hole1 rename=+AlholeR x=+552.45 y=-47.625 z=0
+endgroup  
+
+group Al_BLK5 width=1295.4 height=1295.4 length=304.8 material=Al
+  place hole1 rename=+AlholeL x=-552.45 y=-47.625 z=0
+  place hole1 rename=+AlholeR x=+552.45 y=-47.625 z=0
+endgroup  
+
+group Al_BLK6 width=1295.4 height=1295.4 length=304.8 material=Al
+  place hole1 rename=+AlholeL x=-552.45 y=-47.625 z=0
+  place hole1 rename=+AlholeR x=+552.45 y=-47.625 z=0
+endgroup  
+
+group Al_BLK7 width=1295.4 height=1295.4 length=304.8 material=Al
+  place hole1 rename=+AlholeL x=-552.45 y=-47.625 z=0
+  place hole1 rename=+AlholeR x=+552.45 y=-47.625 z=0
+endgroup  
+
+group Al_BLK8 width=1295.4 height=1295.4 length=304.8 material=Al
+  place hole1 rename=+AlholeL x=-552.45 y=-47.625 z=0
+  place hole1 rename=+AlholeR x=+552.45 y=-47.625 z=0
+endgroup  
+
+box hole2 width=114.3 height=1085.85 length=231.14 material=VariableDensitySteel
+
+group Stl_BLK1 width=1295.4 height=1295.4 length=231.14 color=1,0,0,0.5 material=Slab_Stl
+  place hole2 rename=+Stlhole x=-552.45 y=-47.625 z=0
+  place hole2 rename=+Stlhole x=+552.45 y=-47.625 z=0
+endgroup  
+
+#place Stl_BLK1
+
+group Stl_BLK2 width=1295.4 height=1295.4 length=231.14
+  place hole2 rename=+StlHole x=-552.45 y=-47.625 z=0
+  place hole2 rename=+StlHole x=+552.45 y=-47.625 z=0
+endgroup  
+
+group Stl_BLK3 width=1295.4 height=1295.4 length=231.14
+  place hole2 rename=+StlHole x=-552.45 y=-47.625 z=0
+  place hole2 rename=+StlHole x=+552.45 y=-47.625 z=0
+endgroup  
+
+group Stl_BLK4 width=1295.4 height=1295.4 length=231.14
+  place hole2 rename=+StlHole x=-552.45 y=-47.625 z=0
+  place hole2 rename=+StlHole x=+552.45 y=-47.625 z=0
+endgroup  
+
+group Stl_BLK5 width=1295.4 height=1295.4 length=231.14
+  place hole2 rename=+StlHole x=-552.45 y=-47.625 z=0
+  place hole2 rename=+StlHole x=+552.45 y=-47.625 z=0
+endgroup  
+
+group Stl_BLK6 width=1295.4 height=1295.4 length=231.14
+  place hole2 rename=+StlHole x=-552.45 y=-47.625 z=0
+  place hole2 rename=+StlHole x=+552.45 y=-47.625 z=0
+endgroup  
+
+group Stl_BLK7 width=1295.4 height=1295.4 length=231.14
+  place hole2 rename=+StlHole x=-552.45 y=-47.625 z=0
+  place hole2 rename=+StlHole x=+552.45 y=-47.625 z=0
+endgroup  
+
+group Stl_BLK8 width=1295.4 height=1295.4 length=231.14
+  place hole2 rename=+StlHole x=-552.45 y=-47.625 z=0
+  place hole2 rename=+StlHole x=+552.45 y=-47.625 z=0
+endgroup  
+
+group Stl_BLK9 width=1295.4 height=1295.4 length=231.14
+  place hole2 rename=+StlHole x=-552.45 y=-47.625 z=0
+  place hole2 rename=+StlHole x=+552.45 y=-47.625 z=0
+endgroup  
+
+group Stl_BLK10 width=1295.4 height=1295.4 length=231.14
+  place hole2 rename=+StlHole x=-552.45 y=-47.625 z=0
+  place hole2 rename=+StlHole x=+552.45 y=-47.625 z=0
+endgroup  
+
+box blu_BLK1 width=1320.8 height=660.4 length=1328.42 material=Blu_Stl
+box blu_BLK2 width=1320.8 height=660.4 length=1328.42 material=Blu_Stl
+box blu_BLK3 width=1320.8 height=660.4 length=1328.42 material=Blu_Stl
+box blu_BLK4 width=1320.8 height=660.4 length=1328.42 material=Blu_Stl
+box blu_BLK5 width=1320.8 height=660.4 length=1328.42 material=Blu_Stl
+box blu_BLK6 width=1320.8 height=660.4 length=1328.42 material=Blu_Stl
+box blu_BLK7 width=1320.8 height=660.4 length=1328.42 material=Blu_Stl
+box blu_BLK8 width=1320.8 height=660.4 length=1328.42 material=Blu_Stl
+box blu_BLK9 width=1320.8 height=660.4 length=1328.42 material=Blu_Stl
+box blu_BLK10 width=1320.8 height=660.4 length=1328.42 material=Blu_Stl
+box blu_BLK11 width=1320.8 height=660.4 length=1328.42 material=Blu_Stl
+box blu_BLK12 width=1320.8 height=660.4 length=1328.42 material=Blu_Stl
+box blu_BLK13 width=1320.8 height=660.4 length=1328.42 material=Blu_Stl
+box blu_BLK14 width=1320.8 height=660.4 length=1328.42 material=Blu_Stl
+box blu_BLK15 width=1320.8 height=660.4 length=1328.42 material=Blu_Stl
+box blu_BLK16 width=1320.8 height=660.4 length=1328.42 material=Blu_Stl
+box blu_BLK17 width=1320.8 height=660.4 length=1328.42 material=Blu_Stl
+box blu_BLK18 width=1320.8 height=660.4 length=1328.42 material=Blu_Stl
+box blu_BLK19 width=1320.8 height=660.4 length=1328.42 material=Blu_Stl
+box blu_BLK20 width=1320.8 height=660.4 length=1328.42 material=Blu_Stl
+box blu_BLK21 width=1320.8 height=660.4 length=1328.42 material=Blu_Stl
+box blu_BLK22 width=1320.8 height=660.4 length=1328.42 material=Blu_Stl
+box blu_BLK23 width=1320.8 height=660.4 length=1328.42 material=Blu_Stl
+box blu_BLK24 width=1320.8 height=660.4 length=1328.42 material=Blu_Stl
+box blu_BLK25 width=1320.8 height=660.4 length=1328.42 material=Blu_Stl
+box stl_slab1 width=1320.8 height=50.8 length=4962.652 material=Slab_Stl
+box stl_slab225 width=1320.8 height=76.2 length=5283.2 material=Slab_Stl
+box stl_slab3 width=1320.8 height=76.2 length=5283.2 material=Slab_Stl
+box stl_slab4 width=3962.4 height=25.4 length=5283.2 material=Slab_Stl
+box stl_slab5 width=1320.8 height=50.8 length=2311.4 material=Slab_Stl
+box blu_BLK26 width=1320.8 height=660.4 length=1328.42 material=Blu_Stl
+box blu_BLK27 width=1320.8 height=660.4 length=1328.42 material=Blu_Stl
+box blu_BLK28 width=1320.8 height=660.4 length=1328.42 material=Blu_Stl
+box blu_BLK29 width=1320.8 height=660.4 length=1328.42 material=Blu_Stl
+box blu_BLK30 width=1320.8 height=660.4 length=1328.42 material=Blu_Stl
+box blu_BLK31 width=1320.8 height=660.4 length=1328.42 material=Blu_Stl
+box blu_BLK32 width=1320.8 height=660.4 length=1328.42 material=Blu_Stl
+box stl_slabL width=15.875 height=1270 length=2743.2 material=Slab_Stl
+box stl_slabR width=15.875 height=1270 length=2743.2 material=Slab_Stl
+box blu_BLK33 width=1320.8 height=660.4 length=1328.42 material=Blu_Stl
+box blu_BLK34 width=1320.8 height=660.4 length=1328.42 material=Blu_Stl
+box blu_BLK35 width=1320.8 height=660.4 length=1328.42 material=Blu_Stl
+box blu_BLK36 width=1320.8 height=660.4 length=1328.42 material=Blu_Stl
+box blu_BLK37 width=1320.8 height=660.4 length=1328.42 material=Blu_Stl
+box blu_BLK38 width=1320.8 height=660.4 length=1328.42 material=Blu_Stl
+box blu_BLK39 width=1320.8 height=660.4 length=1328.42 material=Blu_Stl
+box blu_BLK40 width=1320.8 height=660.4 length=1328.42 material=Blu_Stl
+box blu_BLK41 width=1320.8 height=660.4 length=1328.42 material=Blu_Stl
+box blu_BLK42 width=1320.8 height=660.4 length=1328.42 material=Blu_Stl
+box blu_BLK43 width=1320.8 height=660.4 length=1328.42 material=Blu_Stl
+box blu_BLK44 width=1320.8 height=660.4 length=1328.42 material=Blu_Stl
+box blu_BLK45 width=1320.8 height=660.4 length=1328.42 material=Blu_Stl
+box blu_BLK46 width=1320.8 height=660.4 length=1328.42 material=Blu_Stl
+box blu_BLK47 width=1320.8 height=660.4 length=1328.42 material=Blu_Stl
+box blu_BLK48 width=1320.8 height=660.4 length=1328.42 material=Blu_Stl
+box blu_BLK49 width=660.4 height=1320.8 length=1328.42 material=Blu_Stl
+box blu_BLK50 width=660.4 height=1320.8 length=1328.42 material=Blu_Stl
+box blu_BLK51 width=660.4 height=1320.8 length=1328.42 material=Blu_Stl
+box blu_BLK52 width=660.4 height=1320.8 length=1328.42 material=Blu_Stl
+box blu_BLK53 width=660.4 height=1320.8 length=1328.42 material=Blu_Stl
+box blu_BLK54 width=660.4 height=1320.8 length=1328.42 material=Blu_Stl
+box blu_BLK55 width=660.4 height=1320.8 length=1328.42 material=Blu_Stl
+box blu_BLK56 width=660.4 height=1320.8 length=1328.42 material=Blu_Stl
+box blu_BLK57 width=660.4 height=1320.8 length=1328.42 material=Blu_Stl
+box blu_BLK58 width=660.4 height=1320.8 length=1328.42 material=Blu_Stl
+box blu_BLK59 width=660.4 height=1320.8 length=1328.42 material=Blu_Stl
+box blu_BLK60 width=660.4 height=1320.8 length=1328.42 material=Blu_Stl
+box blu_BLK61 width=660.4 height=1320.8 length=1328.42 material=Blu_Stl
+box blu_BLK62 width=660.4 height=1320.8 length=1328.42 material=Blu_Stl
+box blu_BLK63 width=660.4 height=1320.8 length=1328.42 material=Blu_Stl
+box blu_BLK64 width=660.4 height=1320.8 length=1328.42 material=Blu_Stl
+box blu_BLK65 width=1320.8 height=660.4 length=1328.42 material=Blu_Stl
+box blu_BLK66 width=1320.8 height=660.4 length=1328.42 material=Blu_Stl
+box blu_BLK67 width=1320.8 height=660.4 length=1328.42 material=Blu_Stl
+box blu_BLK68 width=1320.8 height=660.4 length=1328.42 material=Blu_Stl
+box blu_BLK69 width=1320.8 height=660.4 length=1328.42 material=Blu_Stl
+box blu_BLK70 width=1320.8 height=660.4 length=1328.42 material=Blu_Stl
+box blu_BLK71 width=1320.8 height=660.4 length=1328.42 material=Blu_Stl
+box blu_BLK72 width=1320.8 height=660.4 length=1328.42 material=Blu_Stl
+box blu_BLK73 width=1320.8 height=660.4 length=1328.42 material=Blu_Stl
+box blu_BLK74 width=1320.8 height=660.4 length=1328.42 material=Blu_Stl
+box blu_BLK75 width=1320.8 height=660.4 length=1328.42 material=Blu_Stl
+box blu_BLK76 width=1320.8 height=660.4 length=1328.42 material=Blu_Stl
+box blu_BLK77 width=1320.8 height=660.4 length=1328.42 material=Blu_Stl
+box blu_BLK78 width=1320.8 height=660.4 length=1328.42 material=Blu_Stl
+box blu_BLK79 width=1320.8 height=660.4 length=1328.42 material=Blu_Stl
+box blu_BLK80 width=1320.8 height=660.4 length=1328.42 material=Blu_Stl
+box blu_BLK81 width=1320.8 height=660.4 length=1328.42 material=Blu_Stl
+box blu_BLK82 width=1320.8 height=660.4 length=1328.42 material=Blu_Stl
+box blu_BLK83 width=1320.8 height=660.4 length=1328.42 material=Blu_Stl
+box blu_BLK84 width=1320.8 height=660.4 length=1328.42 material=Blu_Stl
+box blu_BLK85 width=1320.8 height=660.4 length=1328.42 material=Blu_Stl
+box blu_BLK86 width=1320.8 height=660.4 length=1328.42 material=Blu_Stl
+box blu_BLK87 width=1320.8 height=660.4 length=1328.42 material=Blu_Stl
+box blu_BLK88 width=1320.8 height=660.4 length=1328.42 material=Blu_Stl
+box conc_BLK1 width=914.4 height=4572 length=6400.8 material=Rebar_Concrete
+box conc_BLK2 width=914.4 height=4572 length=5486.4 material=Rebar_Concrete
+box conc_BLK3 width=4572 height=4572 length=914.4 material=Rebar_Concrete
+box topstl1_BLK width=3962.4 height=462.788 length=5283.2 material=Slab_Stl
+box topstl2_BLK width=914.4 height=462.788 length=6400.8 material=Slab_Stl
+box topstl3_BLK width=914.4 height=462.788 length=6400.8 material=Slab_Stl
+box topstl4_BLK width=3962.4 height=462.788 length=1524 material=Slab_Stl
+box topstl5_BLK width=462.28 height=762 length=5283.2 material=Slab_Stl
+box topstl6_BLK width=462.28 height=762 length=5283.2 material=Slab_Stl
+box topstl7_BLK width=4035.28 height=762 length=462.28 material=Slab_Stl
+
+group HadrBox width=8229.6 height=6629.4 length=12744.704 material=Air
+  place Al_BLK1 x=0 y=25.4 z=-5896.102
+  place Al_BLK2 x=0 y=25.4 z=-5591.302
+  place Al_BLK3 x=0 y=25.4 z=-5286.502
+  place Al_BLK4 x=0 y=25.4 z=-4981.702
+  place Al_BLK5 x=0 y=25.4 z=-4676.902
+  place Al_BLK6 x=0 y=25.4 z=-4372.102
+  place Al_BLK7 x=0 y=25.4 z=-4067.302
+  place Al_BLK8 x=0 y=25.4 z=-3762.502
+  place Stl_BLK1 x=0 y=25.4 z=-3494.532
+  place Stl_BLK2 x=0 y=25.4 z=-3263.392
+  place Stl_BLK3 x=0 y=25.4 z=-3032.252
+  place Stl_BLK4 x=0 y=25.4 z=-2801.112
+  place Stl_BLK5 x=0 y=25.4 z=-2569.972
+  place Stl_BLK6 x=0 y=25.4 z=-2338.832
+  place Stl_BLK7 x=0 y=25.4 z=-2107.692
+  place Stl_BLK8 x=0 y=25.4 z=-1876.552
+  place Stl_BLK9 x=0 y=25.4 z=-1645.412
+  place Stl_BLK10 x=0 y=25.4 z=-1414.272
+  place blu_BLK1 x=-1320.8 y=-2324.1 z=-5708.142
+  place blu_BLK2 x=0 y=-2324.1 z=-5708.142
+  place blu_BLK3 x=1320.8 y=-2324.1 z=-5708.142
+  place blu_BLK4 x=-1320.8 y=-2324.1 z=-4379.722
+  place blu_BLK5 x=0 y=-2324.1 z=-4379.722
+  place blu_BLK6 x=1320.8 y=-2324.1 z=-4379.722
+  place blu_BLK7 x=-1320.8 y=-2324.1 z=-3051.302
+  place blu_BLK8 x=0 y=-2324.1 z=-3051.302
+  place blu_BLK9 x=1320.8 y=-2324.1 z=-3051.302
+  place blu_BLK10 x=-1320.8 y=-2324.1 z=-1722.882
+  place blu_BLK11 x=0 y=-2324.1 z=-1722.882
+  place blu_BLK12 x=1320.8 y=-2324.1 z=-1722.882
+  place blu_BLK13 x=-1320.8 y=-2984.5 z=-5708.142
+  place blu_BLK14 x=0 y=-2984.5 z=-5708.142
+  place blu_BLK15 x=1320.8 y=-2984.5 z=-5708.142
+  place blu_BLK16 x=-1320.8 y=-2984.5 z=-4379.722
+  place blu_BLK17 x=0 y=-2984.5 z=-4379.722
+  place blu_BLK18 x=1320.8 y=-2984.5 z=-4379.722
+  place blu_BLK19 x=-1320.8 y=-2984.5 z=-3051.302
+  place blu_BLK20 x=0 y=-2984.5 z=-3051.302
+  place blu_BLK21 x=1320.8 y=-2984.5 z=-3051.302
+  place blu_BLK22 x=-1320.8 y=-2984.5 z=-1722.882
+  place blu_BLK23 x=0 y=-2984.5 z=-1722.882
+  place blu_BLK24 x=1320.8 y=-2984.5 z=-1722.882
+  place blu_BLK25 x=0 y=-1003.3 z=-5708.142
+  place stl_slab1 x=0 y=-647.7 z=-3567.176
+  place stl_slab225 x=-1320.8 y=-1955.8 z=-3715.512
+  place stl_slab3 x=1320.8 y=-1955.8 z=-3715.512
+  place stl_slab4 x=0 y=736.6 z=-3715.512
+  place stl_slab5 x=0 y=698.5 z=-2454.402
+  place blu_BLK26 x=0 y=-1003.3 z=-4379.722
+  place blu_BLK27 x=0 y=-1003.3 z=-3051.302
+  place blu_BLK28 x=0 y=-1003.3 z=-1722.882
+  place blu_BLK29 x=0 y=-1663.7 z=-5708.142
+  place blu_BLK30 x=0 y=-1663.7 z=-4379.722
+  place blu_BLK31 x=0 y=-1663.7 z=-3051.302
+  place blu_BLK32 x=0 y=-1663.7 z=-1722.882
+  place stl_slabL x=-655.6375 y=38.1 z=-2430.272
+  place stl_slabR x=655.6375 y=38.1 z=-2430.272
+  place blu_BLK33 x=-1320.8 y=-1587.5 z=-5708.142
+  place blu_BLK34 x=-1320.8 y=-1587.5 z=-4379.722
+  place blu_BLK35 x=-1320.8 y=-1587.5 z=-3051.302
+  place blu_BLK36 x=-1320.8 y=-1587.5 z=-1722.882
+  place blu_BLK37 x=-1320.8 y=-927.1 z=-5708.142
+  place blu_BLK38 x=-1320.8 y=-927.1 z=-4379.722
+  place blu_BLK39 x=-1320.8 y=-927.1 z=-3051.302
+  place blu_BLK40 x=-1320.8 y=-927.1 z=-1722.882
+  place blu_BLK41 x=1320.8 y=-1587.5 z=-5708.142
+  place blu_BLK42 x=1320.8 y=-1587.5 z=-4379.722
+  place blu_BLK43 x=1320.8 y=-1587.5 z=-3051.302
+  place blu_BLK44 x=1320.8 y=-1587.5 z=-1722.882
+  place blu_BLK45 x=1320.8 y=-927.1 z=-5708.142
+  place blu_BLK46 x=1320.8 y=-927.1 z=-4379.722
+  place blu_BLK47 x=1320.8 y=-927.1 z=-3051.302
+  place blu_BLK48 x=1320.8 y=-927.1 z=-1722.882
+  place blu_BLK49 x=993.775 y=63.5 z=-5708.142
+  place blu_BLK50 x=1654.175 y=63.5 z=-5708.142
+  place blu_BLK51 x=993.775 y=63.5 z=-4379.722
+  place blu_BLK52 x=1654.175 y=63.5 z=-4379.722
+  place blu_BLK53 x=993.775 y=63.5 z=-3051.302
+  place blu_BLK54 x=1654.175 y=63.5 z=-3051.302
+  place blu_BLK55 x=993.775 y=63.5 z=-1722.882
+  place blu_BLK56 x=1654.175 y=63.5 z=-1722.882
+  place blu_BLK57 x=-993.775 y=63.5 z=-5708.142
+  place blu_BLK58 x=-1654.175 y=63.5 z=-5708.142
+  place blu_BLK59 x=-993.775 y=63.5 z=-4379.722
+  place blu_BLK60 x=-1654.175 y=63.5 z=-4379.722
+  place blu_BLK61 x=-993.775 y=63.5 z=-3051.302
+  place blu_BLK62 x=-1654.175 y=63.5 z=-3051.302
+  place blu_BLK63 x=-993.775 y=63.5 z=-1722.882
+  place blu_BLK64 x=-1654.175 y=63.5 z=-1722.882
+  place blu_BLK65 x=1320.8 y=1079.5 z=-5708.142
+  place blu_BLK66 x=0 y=1079.5 z=-5708.142
+  place blu_BLK67 x=-1320.8 y=1079.5 z=-5708.142
+  place blu_BLK68 x=1320.8 y=1079.5 z=-4379.722
+  place blu_BLK69 x=0 y=1079.5 z=-4379.722
+  place blu_BLK70 x=-1320.8 y=1079.5 z=-4379.722
+  place blu_BLK71 x=1320.8 y=1079.5 z=-3051.302
+  place blu_BLK72 x=0 y=1079.5 z=-3051.302
+  place blu_BLK73 x=-1320.8 y=1079.5 z=-3051.302
+  place blu_BLK74 x=1320.8 y=1079.5 z=-1722.882
+  place blu_BLK75 x=0 y=1079.5 z=-1722.882
+  place blu_BLK76 x=-1320.8 y=1079.5 z=-1722.882
+  place blu_BLK77 x=1320.8 y=1739.9 z=-5708.142
+  place blu_BLK78 x=0 y=1739.9 z=-5708.142
+  place blu_BLK79 x=-1320.8 y=1739.9 z=-5708.142
+  place blu_BLK80 x=1320.8 y=1739.9 z=-4379.722
+  place blu_BLK81 x=0 y=1739.9 z=-4379.722
+  place blu_BLK82 x=-1320.8 y=1739.9 z=-4379.722
+  place blu_BLK83 x=1320.8 y=1739.9 z=-3051.302
+  place blu_BLK84 x=0 y=1739.9 z=-3051.302
+  place blu_BLK85 x=-1320.8 y=1739.9 z=-3051.302
+  place blu_BLK86 x=1320.8 y=1739.9 z=-1722.882
+  place blu_BLK87 x=0 y=1739.9 z=-1722.882
+  place blu_BLK88 x=-1320.8 y=1739.9 z=-1722.882
+  place conc_BLK1 x=2514.6 y=-1028.7 z=-3171.952+0.05 # added 0.05 mm to not cross the group boundary
+  place conc_BLK2 x=-2514.6 y=-1028.7 z=-3629.152
+  place conc_BLK3 x=-228.6 y=-1028.7 z=-174.751999999999
+  place topstl1_BLK x=0 y=2301.494 z=-3730.752
+  place topstl2_BLK x=-2514.6 y=1488.694 z=-3171.952+0.05 # added 0.05 mm
+  place topstl3_BLK x=2514.6 y=1488.694 z=-3171.952+0.05 # added 0.05 mm
+  place topstl4_BLK x=0 y=1488.694 z=-296.672
+  place topstl5_BLK x=-2212.34 y=2101.088 z=-3715.512
+  place topstl6_BLK x=2212.34 y=2101.088 z=-3715.512
+  place topstl7_BLK x=0 y=2101.088 z=-827.532
+endgroup
+
+#place HadrBox z=0
+
+box CShld_BLK0 width=1371.6 height=2286 length=1828.8 material=Rebar_Concrete
+box CShld_BLK1 width=1371.6 height=2286 length=1828.8 material=Rebar_Concrete
+
+box air_BLK15 width=457.2 height=457.2 length=457.2 material=Air
+
+group CShld_BLK2 width=1371.6 height=2286 length=1828.8 material=Rebar_Concrete
+  place air_BLK15 x=457.2 y=914.4 z=-685.8
+endgroup
+
+#place CShld_BLK2 z=0
+
+box CShld_BLK3 width=1371.6 height=2286 length=914.4 material=Rebar_Concrete
+box CShld_BLK4 width=914.4 height=2286 length=914.4 material=Rebar_Concrete
+box CShld_BLK5 width=914.4 height=914.4 length=1828.8 material=Rebar_Concrete
+box CShld_BLK6 width=914.4 height=914.4 length=1828.8 material=Rebar_Concrete
+box CShld_BLK7 width=914.4 height=914.4 length=1828.8 material=Rebar_Concrete
+box CShld_BLK8 width=914.4 height=914.4 length=1828.8 material=Rebar_Concrete
+box CShld_BLK9 width=2286 height=457.2 length=1828.8 material=Rebar_Concrete
+box CShld_BLK10 width=457.2 height=914.4 length=1828.8 material=Rebar_Concrete
+box CShld_BLK11 width=457.2 height=914.4 length=1828.8 material=Rebar_Concrete
+box CShld_BLK12 width=3657.6 height=914.4 length=1828.8 material=Rebar_Concrete
+box CShld_stl_BLK width=3962.4 height=462.788 length=1828.8 material=Slab_Stl
+box HadCell width=76.2 height=76.2 length=1 material=He
+group HadMon width=2200 height=2200 length=10 material=Air
+  do i -456 456 114
+    do j -456 456 114
+      place HadCell x=$i y=$j z=0
+    enddo
+  enddo
+  virtualdetector hadron radius=1000 length=1 color=0,1,0 format=ascii file=hadron.dat
+  place hadron z=-1
+endgroup
+
+#place HadMon z=0
+
+group ShldBox width=8229.6 height=6629.4 length=1828.8 material=Al
+  place CShld_BLK0 x=1828.8 y=-2171.7 z=0
+  place CShld_BLK1 x=-1828.8 y=-2171.7 z=0
+  place CShld_BLK2 x=-1828.8 y=114.3 z=0 # placing nested group, no front=1 needed - not autosized group
+  place CShld_BLK3 x=1828.8 y=114.3 z=-457.2
+  place CShld_BLK4 x=1600.2 y=114.3 z=457.2
+  place CShld_BLK5 x=685.8 y=-2857.5 z=0
+  place CShld_BLK6 x=-685.8 y=-2857.5 z=0
+  place CShld_BLK7 x=685.8 y=-1485.9 z=0
+  place CShld_BLK8 x=-685.8 y=-1485.9 z=0
+  place CShld_BLK9 x=0 y=-2171.7 z=0
+  place CShld_BLK10 x=0 y=-2857.5 z=0
+  place CShld_BLK11 x=0 y=-1485.9 z=0
+  place CShld_BLK12 x=0 y=1790.7 z=0
+  place CShld_stl_BLK x=0 y=2479.294 z=0
+  place HadMon x=0 y=200 z=200 # no front=1, not autosized group
+endgroup
+
+#place ShldBox z=0
+
+box MuMonAlcvFill_0 width=3657.6 height=4470.4 length=254 material=Shotcrete
+box MuCell width=76.2 height=76.2 length=1 material=He
+group MuMon width=2200 height=2200 length=57.15 material=Air
+  do i -1016 1016 254
+    do j -1016 1016 254
+      place MuCell x=$i y=$j z=0
+    enddo
+  enddo
+endgroup
+
+group MuMonAlcv_0 width=3657.6 height=4470.4 length=3225.8 color=1,1,0,0.5 material=Air
+  place MuMonAlcvFill_0 x=0 y=0 z=1485.9
+  place MuMon x=0 y=389.0073499346 z=-127 # no front=1, not autosized group
+endgroup
+
+#place MuMonAlcv_0 z=0
+
+tube TUNE_S radius=3800 length=693441.5
+group TUNE radius=0 color='' material=Air
+  place SC01 x=0 y=0 z=-8379.75 parent=TUNE_S
+  place DPIP x=0 y=0 z=-8379.75 parent=TUNE_S front=1
+  place HadrBox x=0 y=238.454906748761 z=337601.751848232 rotation=X-3.34320873458835 parent=TUNE_S # front=1 - no!
+  place ShldBox x=0 y=-186.485842412439 z=330327.401013332 rotation=X-3.34320873458835 parent=TUNE_S # front=1 - no!
+  place MuMonAlcv_0 x=0 y=-373.532815511211 z=345635.867008979 rotation=X-3.34320873458835 parent=TUNE_S # front=1 - no!
+  place TUNE_S z=0
+endgroup
+
+#place TUNE z=0
+
+box ConcreteSection0and4 width=1508.05 height=854.1 length=52397 material=Concrete
+box ConcreteSection1and3 width=933.5 height=4747.9 length=52397 material=Concrete
+box ConcreteSection2 width=6146.9 height=854.1 length=52397 material=Concrete
+box ConcreteSection5 width=5842 height=457.2 length=52397 material=Concrete
+box DuratekBlock width=1330 height=670 length=52397 material=Fe
+box DuratekBlockCovering width=1355.4 height=665 length=52397 material=Fe
+box DuratekBlockgnumiA width=1168.4 height=81.425 length=52397 material=Fe
+box DuratekBlockgnumiBC width=106.2 height=1992.5 length=52397 material=Fe
+box DuratekBlockgnumiD width=1168.4 height=602.95 length=24700 material=Fe
+box DuratekBlockgnumiD2 width=1168.4 height=602.95 length=21697 material=Fe
+box DuratekBlockgnumiD3 width=1168.4 height=372.95 length=6000 material=Fe
+tube Baffle outerRadius=30 innerRadius=6.5 length=1500 material=Target
+torus FrontTorus outerRadius=61.8744 innerRadius=53.7464 majorRadius=95.5802
+box Box width=382.3208 height=382.3208 length=247.4976
+boolean op=subtraction Horn1Front FrontTorus Box x=0 y=0 z=123.7488 material=Al
+
+polycone PHorn1OC outerRadius=157.4546,157.4546,157.4546,206.375,206.375,203.073,203.073,203.073,203.073,165.1,165.1,179.8666,200.025,200.025,200.025,298.45,298.45,298.45,196.85,196.85 \
+                   innerRadius=149.3266,149.3266,149.3266,149.3266,149.3266,149.3266,149.3266,149.225,149.225,149.225,149.225,149.225,184.15,184.15,166.2307,166.2161,152.4,152.4,152.4,152.4 \
+                   z=0,0.0134025262708448,19.1828955570842,19.2028015726926,44.5829714733022,44.6028774889105,45.8569564722347,45.8768624878431,69.9830473895201,70.0029534051285,2945.64587419883,2960.37632574899,2980.46149549778,3107.70074726617,3132.08561638637,3132.10552240197,3150.89680113623,3170.18573026069,3170.2056362763,3202.7368 \
+                   material=Al color=1,0,0,0.5 color=1,0,0,0.5
+polycone PHorn1IC outerRadius=35.7030860542895,35.7028197921433,35.7028197921433,35.319933323715,35.3195335687916,34.8061114791309,34.8057058227959,34.7801399352857,34.7797339760294,34.2845898707233,34.2841780436548,25.1836156429564,17.5476186961041,13.5001,13.5001,19.0652320615578,27.0149505832159,38.5067844557405,51.9983046488297,67.4896362155877,84.9811464776573,99.7855587873791,100.12279379383,107.95,107.95,107.95,107.95,107.95,107.95,107.95,107.95,107.95,147.6121,147.6121,147.6121 \
+                   innerRadius=33.7030900542895,33.7028237540035,33.7028237540035,33.3198821428716,33.3194823300619,32.8059853399635,32.8055796240046,32.7800099773499,32.7796039583795,32.2843864801975,32.2839745916466,23.0840620762048,14.3712076090659,9.0043,9.0043,16.1936283346585,25.0149545832159,36.5067884557405,49.9983086488297,65.4896402155877,82.9811504776574,97.7855627873791,98.1227977938295,98.425,98.425,98.425,98.425,98.425,98.425,98.425,98.425,98.425,98.425,98.425,98.425 \
+                   z=0,0.0134025262708448,0.0134025262708448,19.1828955570842,19.2028015726926,44.5829714733022,44.6028774889105,45.8569564722347,45.8768624878431,69.9830473895201,70.0029534051285,451.501742538606,681.515752892758,770.017898287354,809.810023488389,849.422994548948,929.465083310008,1093.98830231278,1360.78862951111,1765.23905464098,2347.96775555898,2945.64587419883,2960.37632574899,2974.66884495576,2980.46149549778,3107.70074726617,3132.08561638637,3132.10552240197,3150.89680113623,3170.18573026069,3170.2056362763,3253.97014995612,3253.99005597172,3285.64062078896,3285.65764 \
+                   material=Al color=0,0,1,0.5
+
+#place PHorn1OC z=0
+#place PHorn1IC z=0
+
+fieldmap fieldHorn1 file=$field_map_directory/horn1_fieldmap.dat current=1.0
+fieldmap fieldHorn2 file=$field_map_directory/horn2_fieldmap.dat current=1.0
+
+box sBottom width=36.4998 height=13.7668 length=10.16
+box sStrip width=12.7 height=93.599 length=1.9304
+boolean op=union sSpider_tmp1 sBottom sStrip x=11.8999 y=53.6829 z=0
+boolean op=union sSpider_tmp2 sSpider_tmp1 sStrip x=-11.8999 y=53.6829 z=0
+box sTop width=36.4998 height=2.7432 length=10.16
+boolean op=union sSpider_tmp3 sSpider_tmp2 sTop x=0 y=101.854 z=0
+tube sBottomSubtr outerRadius=30.1752 innerRadius=0 length=20.32
+boolean op=subtraction sSpider1 sSpider_tmp3 sBottomSubtr x=0 y=-30.9118 z=0 material=Al
+tube sCeramicRod1 outerRadius=12.4714 innerRadius=0 length=18.8161330856796 material=CT852
+
+box sBottom width=36.4998 height=11.5316 length=10.16
+box sStrip width=12.7 height=79.3242 length=1.6002
+boolean op=union sSpider_tmp1 sBottom sStrip x=11.8999 y=45.4279 z=0
+boolean op=union sSpider_tmp2 sSpider_tmp1 sStrip x=-11.8999 y=45.4279 z=0
+box sTop width=36.4998 height=2.7432 length=10.16
+boolean op=union sSpider_tmp3 sSpider_tmp2 sTop x=0 y=86.4616 z=0
+tube sBottomSubtr outerRadius=44.45 innerRadius=0 length=20.32
+boolean op=subtraction sSpider2 sSpider_tmp3 sBottomSubtr x=0 y=-46.3042 z=0 material=Al
+tube sCeramicRod2 outerRadius=12.4714 innerRadius=0 length=18.8435053341248 material=CT852
+
+box sBottom width=36.4998 height=9.6266 length=10.16
+box sStrip width=12.7 height=39.624 length=0.7874
+boolean op=union sSpider_tmp1 sBottom sStrip x=11.8999 y=24.6253 z=0
+boolean op=union sSpider_tmp2 sSpider_tmp1 sStrip x=-11.8999 y=24.6253 z=0
+box sTop width=36.4998 height=2.7432 length=10.16
+boolean op=union sSpider_tmp3 sSpider_tmp2 sTop x=0 y=45.8089 z=0
+tube sBottomSubtr outerRadius=84.1502 innerRadius=0 length=20.32
+boolean op=subtraction sSpider3 sSpider_tmp3 sBottomSubtr x=0 y=-86.9569 z=0 material=Al
+tube sCeramicRod3 outerRadius=12.4714 innerRadius=0 length=19.0437059538716 material=CT852
+
+polycone sPCone1F outerRadius=149.2266,149.2266,149.2266,149.2266,149.2266,149.2266,149.2266,149.2266,149.125,149.125,149.125,149.125,149.125,149.125,149.125,149.125,149.125,149.125,149.125,149.125,149.125,149.125,149.125,173.9680,184.05,184.05,166.1307,166.1161,152.3,152.3,152.3,152.3,147.601,147.601 \
+                  innerRadius=35.8030860542895,35.8028197921433,35.8028197921433,35.419933323715,35.4195335687916,34.9061114791309,34.9057058227959,34.8801399352857,34.8797339760294,34.3845898707233,34.3841780436548,25.2836156429564,17.6476186961041,13.6001,13.6001,19.1652320615578,27.1149505832159,38.6067844557405,52.0983046488297,67.5896362155877,85.0811464776573,99.8855587873791,100.22279379383,108.05,108.05,108.05,108.05,108.05,108.05,108.05,108.05,108.05,108.05,108.05 \
+                  z=0,0.0134025262708448,0.0134025262708448,19.1828955570842,19.2028015726926,44.5829714733022,44.6028774889105,45.8569564722347,45.8768624878431,69.9830473895201,70.0029534051285,451.501742538606,681.515752892758,770.017898287354,809.810023488389,849.422994548948,929.465083310008,1093.98830231278,1360.78862951111,1765.23905464098,2347.96775555898,2945.64587419883,2960.37632574899,2974.66884495576,2980.46149549778,3107.70074726617,3132.08561638637,3132.10552240197,3150.89680113623,3170.18573026069,3170.2056362763,3202.83159585834,3202.85150187395,3253.88384
+
+torus sTorusF outerRadius=53.6464 innerRadius=0 majorRadius=95.5802
+box sBoxTmp height=300 width=300 length=300
+boolean op=subtraction sHalfTorusF sTorusF sBoxTmp z=150
+boolean op=union sPHorn1F sPCone1F sHalfTorusF material=Air
+
+#place sPCone1F z=0
+#place sPHorn1F z=0
+
+# TODO: check Spider support overlaps!
+group PHorn1F radius=0
+ place sSpider1 x=0 y=25.0832669143204 z=489.2294 parent=sPHorn1F
+ place sCeramicRod1 x=0 y=137.71693345716 z=489.2294 rotation=X-90 parent=sPHorn1F
+ place sSpider1 x=21.7227463577072 y=-12.5416334571602 z=489.2294 rotation=Z-120 parent=sPHorn1F
+ place sCeramicRod1 x=119.266362905192 y=-68.8584667285801 z=489.2294 rotation=Z180,Y60,X90 parent=sPHorn1F
+ place sSpider1 x=-21.7227463577072 y=-12.5416334571602 z=489.2294 rotation=Z120 parent=sPHorn1F
+ place sCeramicRod1 x=-119.266362905192 y=-68.8584667285802 z=489.2294 rotation=Z-180,Y-60,X90 parent=sPHorn1F
+ place sSpider2 x=0 y=40.4482946658752 z=1088.6948 parent=sPHorn1F
+ place sCeramicRod2 x=0 y=137.703247332938 z=1088.6948 rotation=X-90 parent=sPHorn1F
+ place sSpider2 x=35.0292507204065 y=-20.2241473329376 z=1088.6948 rotation=Z-120 parent=sPHorn1F
+ place sCeramicRod2 x=119.254510373936 y=-68.8516236664688 z=1088.6948 rotation=Z180,Y60,X90 parent=sPHorn1F
+ place sSpider2 x=-35.0292507204065 y=-20.2241473329376 z=1088.6948 rotation=Z120 parent=sPHorn1F
+ place sCeramicRod2 x=-119.254510373936 y=-68.8516236664689 z=1088.6948 rotation=Z-180,Y-60,X90 parent=sPHorn1F
+ place sSpider3 x=0 y=80.9007940461284 z=2094.0776 parent=sPHorn1F
+ place sCeramicRod3 x=0 y=137.603147023064 z=2094.0776 rotation=X-90 parent=sPHorn1F
+ place sSpider3 x=70.0621428302801 y=-40.4503970230642 z=2094.0776 rotation=Z-120 parent=sPHorn1F
+ place sCeramicRod3 x=119.167820962659 y=-68.8015735115321 z=2094.0776 rotation=Z180,Y60,X90 parent=sPHorn1F
+ place sSpider3 x=-70.06214283028 y=-40.4503970230642 z=2094.0776 rotation=Z120 parent=sPHorn1F
+ place sCeramicRod3 x=-119.167820962659 y=-68.8015735115322 z=2094.0776 rotation=Z-180,Y-60,X90 parent=sPHorn1F
+ place fieldHorn1 z=0 parent=sPHorn1F #parent=sPHorn1F # add magnetic field between the coils
+ place sPHorn1F material=Air z=0 color=0,1,0,0.5 # parent volume last
+endgroup
+
+#place PHorn1F z=0
+#fieldlines radius=100 center=0,120,-800 nLines=1000 color=1,0,0 # test field within the horn around the neck
+#printfield type=print z=-800 field=Btot layout=xy drow=10 dcol=10 nrow=10 ncol=10 
+
+tube PHorn1InsRings outerRadius=195.2498 innerRadius=152.4 length=44.45 material=CT852
+tube PHorn1CPB1s outerRadius=196.85 innerRadius=147.701 length=55.5752 material=Al
+tube PHorn1CPB2s outerRadius=147.701 innerRadius=107.95 length=15.8496 material=Al
+polycone sMH outerRadius=157.4646,157.4646,157.4646,157.4646,157.4646,157.4646,206.385,206.385,203.083,203.083,203.083,203.083,165.11,165.11,165.11,165.11,165.11,165.11,165.11,165.11,165.11,165.11,165.11,165.11,179.8766,194.2213,200.035,200.035,200.035,298.46,298.46,298.46,196.86,196.86,196.86,196.86,196.86,196.86,196.86,196.86 \
+             innerRadius=33.6958,33.6958,33.6958,33.6928237540035,33.6928237540035,33.3098821428716,33.3094823300619,32.7959853399635,32.7955796240046,32.7700099773499,32.7696039583795,32.2743864801975,32.2739745916466,23.0740620762048,14.3612076090659,8.9943,8.9943,16.1836283346585,25.0049545832159,36.4967884557405,49.9883086488297,65.4796402155877,82.9711504776573,97.7755627873791,98.1127977938295,98.415,98.415,98.415,98.415,98.415,98.415,98.415,98.415,98.415,98.415,98.415,98.415,98.415,98.415,98.415 \
+             z=-61.8844,-61.8544939843917,-0.0065034893374758,0.0134025262708448,0.0134025262708448,19.1828955570842,19.2028015726926,44.5829714733022,44.6028774889105,45.8569564722347,45.8768624878431,69.9830473895201,70.0029534051285,451.501742538606,681.515752892758,770.017898287354,809.810023488389,849.422994548948,929.465083310008,1093.98830231278,1360.78862951111,1765.23905464098,2347.96775555898,2945.64587419883,2960.37632574899,2974.66884495576,2980.46149549778,3107.70074726617,3132.08561638637,3132.10552240197,3150.89680113623,3170.18573026069,3170.2056362763,3202.83159585834,3202.85150187395,3253.97014995612,3253.99005597172,3285.64062078896,3285.66052680456,3310.6968 \
+             material=Vacuum color=''
+
+group MHorn1 radius=0
+  place Horn1Front z=0 parent=sMH
+  place PHorn1OC z=0 parent=sMH
+  place PHorn1IC z=0 parent=sMH
+  place PHorn1F z=0 parent=sMH front=1 # nested group placement, front=1
+  place PHorn1InsRings z=3224.9618 parent=sMH
+  place PHorn1CPB1s z=3274.9744 parent=sMH
+  place PHorn1CPB2s z=3302.762 parent=sMH
+  place sMH z=0
+endgroup
+
+#place MHorn1 z=0
+#exit
+
+torus FrontTorus outerRadius=55.4736 innerRadius=47.2186 majorRadius=324.0024
+box Box width=1296.0096 height=1296.0096 length=221.8944
+boolean op=subtraction Horn2Front FrontTorus Box x=0 y=0 z=110.9472 material=Al
+
+polycone PHorn2OC outerRadius=379.476,379.476,425.45,425.45,425.45,425.45,395.4018,395.4018,419.1,419.1,419.1,419.1,469.9,469.9,469.9,469.9,366.014,366.014,365.887 \
+                  innerRadius=371.221,371.221,371.221,371.221,370.0018,370.0018,370.0018,370.0018,392.1695,406.4,406.4,344.5755,344.4853,323.1107,318.3128,318.3128,318.3128,318.3128,318.3128 \
+                  z=7.493,24.6000660302967,24.6498470083696,49.9883648474787,50.0381458255516,82.7940293975237,82.8438103755966,3183.60137258076,3205.80368880127,3220.04104853012,3355.59465182265,3389.74440278066,3389.79418375873,3401.59227556201,3401.64205654008,3427.82685100643,3427.8766319845,3450.82566287611,3450.8694 \
+                  material=Al color=1,0,0,0.5
+polycone PHorn2IC outerRadius=275.800566,272.755508246607,272.74664723251,268.236391057149,268.227530043052,262.396982767241,262.388121753144,247.801832930608,217.283471257785,188.761622850093,162.244512729849,137.726282645149,115.203783112239,94.6807456172301,76.1527858469996,60.1778595524543,48.1871322301419,44.4567558939536,44.0055,44.0055,45.9722886236887,60.5913021858922,77.2246829744806,95.866340979004,116.500886607937,139.135133096333,163.771601091268,226.344325631355,273.024689663571,277.5331,277.5331,277.5331,277.5331,277.5331,277.5331,277.5331,277.5331,277.5331,277.5331,277.5331,277.5331,277.5331,313.7662,313.7662 \
+                  innerRadius=268.043581783843,265.697548572486,265.690691805279,262.177585998328,262.170638212143,257.558831088992,257.551760140659,244.801851948267,214.283492103829,185.761645939371,159.244538612185,134.726312066966,112.203789112239,91.6807516172301,73.1527918469996,56.6258098883845,42.8813225198716,39.4557480756344,39.0029408498569,39.0020740008225,40.8246074841566,57.5899289393708,74.2246931516424,92.8663503438972,113.500892607937,136.135139096333,160.771607091268,223.354491631355,271.0434,271.0434,271.0434,271.0434,271.0434,271.0434,271.0434,271.0434,271.0434,271.0434,271.0434,271.0434,271.0434,271.0434,271.0434,271.0434 \
+                  z=7.493,24.6000660302967,24.6498470083696,49.9883648474787,50.0381458255516,82.7940293975237,82.8438103755966,170.408550805838,362.164878342671,518.626492425814,644.373243037974,743.736075271495,820.697467372207,878.891430739434,921.65329090406,951.96990655046,974.271784727121,986.965934135712,993.387680307117,1038.04121763851,1051.33273878398,1099.96875436121,1162.39410086463,1250.25752716331,1369.58253160407,1527.13932720481,1730.34527969842,2396.11608044546,3001.20386892163,3083.29270176385,3183.60137258076,3205.80368880127,3220.04104853012,3355.59465182265,3389.74440278066,3389.79418375873,3401.59227556201,3401.64205654008,3427.82685100643,3427.8766319845,3450.82566287611,3504.1410903922,3504.19087137027,3536.188 \
+                  material=Al color=0,0,1,0.5
+
+box sBottom width=36.4998 height=8.763 length=10.16
+box sStrip width=12.7 height=178.6382 length=3.175
+boolean op=union sSpider_tmp1 sBottom sStrip x=11.8999 y=93.7006 z=0
+boolean op=union sSpider_tmp2 sSpider_tmp1 sStrip x=-11.8999 y=93.7006 z=0
+box sTop width=36.4998 height=2.7432 length=10.16
+boolean op=union sSpider_tmp3 sSpider_tmp2 sTop x=0 y=184.3913 z=0
+tube sBottomSubtr outerRadius=147.6248 innerRadius=0 length=20.32
+boolean op=subtraction sSpider4 sSpider_tmp3 sBottomSubtr x=0 y=-150.8633 z=0 material=Al
+tube sCeramicRod4 outerRadius=12.4714 innerRadius=0 length=39.9238518803965 material=CT852
+
+polycone sPCone2F outerRadius=370.721,370.721,370.721,370.721,369.5018,369.5018,369.5018,369.5018,369.5018,369.5018,369.5018,369.5018,369.5018,369.5018,369.5018,369.5018,369.5018,369.5018,369.5018,369.5018,369.5018,369.5018,369.5018,369.5018,369.5018,369.5018,369.5018,369.5018,369.5018,369.5018,369.5018,391.6695,405.9,405.9,344.0755,343.9853,322.6107,317.8128,317.8128,317.8128,317.8128,317.8128,317.8128,317.8128 \
+                  innerRadius=276.300566,273.255508246607,273.24664723251,268.736391057149,268.727530043052,262.896982767241,262.888121753144,248.301832930608,217.783471257785,189.261622850093,162.744512729849,138.226282645149,115.703783112239,95.1807456172301,76.6527858469996,60.6778595524543,48.6871322301419,44.9567558939536,44.5055,44.5055,46.4722886236887,61.0913021858922,77.7246829744806,96.366340979004,117.000886607937,139.635133096333,164.271601091268,226.844325631355,273.524689663571,278.0331,278.0331,278.0331,278.0331,278.0331,278.0331,278.0331,278.0331,278.0331,278.0331,278.0331,278.0331,278.0331,278.0331,278.0331 \
+                  z=7.493,24.6000660302967,24.6498470083696,49.9883648474787,50.0381458255516,82.7940293975237,82.8438103755966,170.408550805838,362.164878342671,518.626492425814,644.373243037974,743.736075271495,820.697467372207,878.891430739434,921.65329090406,951.96990655046,974.271784727121,986.965934135712,993.387680307117,1038.04121763851,1051.33273878398,1099.96875436121,1162.39410086463,1250.25752716331,1369.58253160407,1527.13932720481,1730.34527969842,2396.11608044546,3001.20386892163,3083.29270176385,3183.60137258076,3205.80368880127,3220.04104853012,3355.59465182265,3389.74440278066,3389.79418375873,3401.59227556201,3401.64205654008,3427.82685100643,3427.8766319845,3450.82566287611,3495.28007629522,3495.32985727329,3503.684
+
+torus sTorusF outerRadius=46.7186 innerRadius=0 majorRadius=324.0024
+boolean op=union sPHorn2F sPCone2F sTorusF x=0 y=0 z=7.493 material=Ar
+
+# added a 1.0001 multiplier to avoid fake intersections
+group PHorn2F radius=0 
+  place sSpider4 x=0 y=143.315048119603 z=1519.1486 parent=sPHorn2F
+  place sCeramicRod4 x=0 y=1.0001*349.039874059802 z=1519.1486 rotation=X-90 parent=sPHorn2F
+  place sSpider4 x=124.114472416166 y=-71.6575240598017 z=1519.1486 rotation=Z-120 parent=sPHorn2F
+  place sCeramicRod4 x=1.0001*302.277397869509 y=1.0001*(-174.519937029901) z=1519.1486 rotation=Z180,Y60,X90 parent=sPHorn2F
+  place sSpider4 x=-124.114472416166 y=-71.6575240598018 z=1519.1486 rotation=Z120 parent=sPHorn2F
+  place sCeramicRod4 x=1.0001*(-302.277397869509) y=1.0001*(-174.519937029901) z=1519.1486 rotation=Z-180,Y-60,X90 parent=sPHorn2F
+  place fieldHorn2 z=0 parent=sPHorn2F
+  place sPHorn2F z=0 color=0,1,0,0.5 # place mother volume last, use z=0 for horns (polycone)
+endgroup
+
+#place PHorn2F
+#fieldlines radius=200 center=0,200,1000 nLines=500 color=1,0,0 # test the magnetic field around the neck
+#printfield type=print z=1000 field=Btot layout=xy drow=20 dcol=20 nrow=10 ncol=10 
+
+tube PHorn2InsRings outerRadius=365.887 innerRadius=323.0626 length=44.45 material=CT852
+tube PHorn2CPB1s outerRadius=367.5126 innerRadius=318.3128 length=55.5752 material=CT852
+tube PHorn2CPB2s outerRadius=318.3128 innerRadius=279.4 length=15.875 material=Al
+polycone sMH outerRadius=379.576,379.576,379.576,379.576,379.576,425.55,425.55,425.55,425.55,395.5018,395.5018,395.5018,395.5018,395.5018,395.5018,395.5018,395.5018,395.5018,395.5018,395.5018,395.5018,395.5018,395.5018,395.5018,395.5018,395.5018,395.5018,395.5018,395.5018,395.5018,395.5018,395.5018,395.5018,395.5018,419.2,419.2,419.2,419.2,470,470,470,470,366.114,366.114,367.6126,367.6126,367.6126,367.6126,367.6126 \
+             innerRadius=267.694787825212,267.694787825212,267.694787825212,268.963663807337,265.597548572486,265.590691805279,262.077585998328,262.070638212143,257.458831088992,257.451760140659,244.701851948267,214.183492103829,185.661645939371,159.144538612185,134.626312066966,112.103789112239,91.5807516172301,73.0527918469996,56.5258098883845,42.7813225198716,39.3557480756344,38.9029408498569,38.9020740008225,40.7246074841566,57.4899289393708,74.1246931516424,92.7663503438972,113.400892607937,136.035139096333,160.671607091268,223.254491631355,270.9434,270.9434,270.9434,270.9434,270.9434,270.9434,270.9434,270.9434,270.9434,270.9434,270.9434,270.9434,270.9434,270.9434,270.9434,270.9434,270.9434,270.9434 \
+             z=-48.0806,-47.9308190219271,-0.0912990938645706,0.00826286228124218,24.6000660302967,24.6498470083696,49.9883648474787,50.0381458255516,82.7940293975237,82.8438103755966,170.408550805838,362.164878342671,518.626492425814,644.373243037974,743.736075271495,820.697467372207,878.891430739434,921.65329090406,951.96990655046,974.271784727121,986.965934135712,993.387680307117,1038.04121763851,1051.33273878398,1099.96875436121,1162.39410086463,1250.25752716331,1369.58253160407,1527.13932720481,1730.34527969842,2396.11608044546,3001.20386892163,3083.29270176385,3183.60137258076,3205.80368880127,3220.04104853012,3355.59465182265,3389.74440278066,3389.79418375873,3401.59227556201,3401.64205654008,3427.82685100643,3427.8766319845,3450.82566287611,3495.28007629522,3495.32985727329,3504.1410903922,3504.19087137027,3558.9194 \
+             material=Vacuum color=''
+
+group MHorn2 radius=0
+  place Horn2Front x=0 y=0 z=7.493 parent=sMH
+  place PHorn2OC x=0 y=0 z=0 parent=sMH
+  place PHorn2IC x=0 y=0 z=0 parent=sMH
+  place PHorn2F z=0 parent=sMH front=1 # placing nested groups, front=1
+  place PHorn2InsRings z=3473.0944 parent=sMH
+  place PHorn2CPB1s z=3523.107 parent=sMH
+  place PHorn2CPB2s z=3550.8819 parent=sMH
+  place sMH z=0
+endgroup
+
+#place MHorn2
+
+# P. Snopok modified these values to match those of the new target
+#box TGT2 width=7.4 height=63 length=16.6
+box TGT2 width=9.0 height=63 length=15.0 # box reduced from 16.6 to 15 to match the overall length of 24 mm
+#tube TGTRE outerRadius=3.7 innerRadius=0 length=63 initialPhi=0 finalPhi=180
+tube TGTRE outerRadius=4.5 innerRadius=0 length=63 initialPhi=0 finalPhi=180 # radius 3.7 => 4.5 (width=9)
+#boolean op=union TGT1a TGT2 TGTRE x=0 y=0 z=-8.3 rotation=X90 
+#boolean op=union TargetFin TGT1a TGTRE x=0 y=0 z=+8.3 rotation=X270 color=0,0,1 material=Target
+boolean op=union TGT1a TGT2 TGTRE x=0 y=0 z=-7.5 rotation=X90 # 8.3 => 7.5, shorter central box length
+boolean op=union TargetFin TGT1a TGTRE x=0 y=0 z=+7.5 rotation=X270 color=0,0,1 material=Target
+
+#box TargetBottom width=7.4 height=87 length=1233 material=Target
+box TargetBottom width=9.0 height=87 length=1233 material=Target # single piece => convenient!
+tube OutsideCasing outerRadius=150 innerRadius=147 length=1450 material=Al color=1,1,1,0.2
+tube CasingWater outerRadius=147 innerRadius=133.7 length=1450 material=WATER color=0,1,1,0.2
+tube InsideCasing outerRadius=133.7 innerRadius=123 length=1450 material=Al color=1,1,1,0.2
+
+tube TargetDnFlange1 outerRadius=150 innerRadius=0 length=25
+tube DnFlangeCutout outerRadius=123 innerRadius=0 length=17.5
+boolean op=subtraction TargetDnFlange2 TargetDnFlange1 DnFlangeCutout x=0 y=0 z=-3.75
+tube DnFlangeHole outerRadius=60 innerRadius=0 length=25
+boolean op=subtraction TargetDnFlange TargetDnFlange2 DnFlangeHole x=0 y=41.5 z=0 material=Al
+
+tube TargetDnBeWindow outerRadius=60 innerRadius=0 length=1 material=Be
+tube TargetUpFlange1 outerRadius=150 innerRadius=0 length=25
+tube UpFlangeHole outerRadius=12.7 innerRadius=0 length=25
+boolean op=subtraction TargetUpFlange TargetUpFlange1 UpFlangeHole x=0 y=41.5 z=0 material=Al
+
+tube TargetUpBeFlange1 outerRadius=34.671 innerRadius=0 length=12.7
+tube UpBeFlangeCutout outerRadius=22.225 innerRadius=0 length=6.45
+boolean op=subtraction TargetUpBeFlange2 TargetUpBeFlange1 UpBeFlangeCutout x=0 y=0 z=-3.225
+
+tube UpBeFlangeHole outerRadius=12.7 innerRadius=0 length=12.7
+boolean op=subtraction TargetUpBeFlange TargetUpBeFlange2 UpBeFlangeHole material=Al
+
+tube TargetUpBeWindow outerRadius=12.7 innerRadius=0 length=0.254 material=Be
+
+box PressingPlate1 width=20 height=87 length=1233
+box PressingPlateCutout width=5 height=60 length=1233
+boolean op=subtraction PressingPlate PressingPlate1 PressingPlateCutout x=7.5 y=0 z=0 material=Al
+
+box CoolingPlate1 width=20 height=87 length=1233
+box CoolingPlateCutout width=5 height=60 length=1233
+boolean op=subtraction CoolingPlate2 CoolingPlate1 CoolingPlateCutout x=-7.5 y=0 z=0
+
+tube CoolingWater outerRadius=5 innerRadius=0 length=1233 material=WATER
+
+boolean op=subtraction CoolingPlate3 CoolingPlate2 CoolingWater x=0 y=36.75 z=0
+boolean op=subtraction CoolingPlate CoolingPlate3 CoolingWater x=0 y=-36.75 z=0 material=Al
+
+tube TargetMotherVol1 outerRadius=34.721 innerRadius=0 length=12.8
+tube dummy outerRadius=150.05 innerRadius=0 length=25.1
+boolean op=union TargetMotherVol2 TargetMotherVol1 dummy x=0 y=-41.5 z=18.85
+
+tube dummy2 outerRadius=150.05 innerRadius=0 length=1450.1
+boolean op=union TargetMotherVol3 TargetMotherVol2 dummy2 x=0 y=-41.5 z=756.35
+
+tube dummy3 outerRadius=150.05 innerRadius=0 length=25.1
+boolean op=union TargetMotherVol TargetMotherVol3 dummy3 x=0 y=-41.5 z=1493.85 material=He
+
+group TargetMother radius=0
+  place TargetFin rename=+Budal_HFVS x=-24.1 y=0 z=180.35 rotation=Z-90 parent=TargetMotherVol
+  place TargetFin rename=+Budal_VFHS x=0 y=-27.8 z=209.35 parent=TargetMotherVol
+  do i 0 47
+    #place TargetFin x=0 y=-27.8 z=237.85+$i*24.5 parent=TargetMotherVol # awkward! the gap is 0.4, not 0.5 according to Katsuya, TODO: check again!
+    place TargetFin x=0 y=-27.8 z=237.85+$i*24.4 parent=TargetMotherVol
+  enddo
+  place TargetBottom x=0 y=-102.81 z=784.85 parent=TargetMotherVol # modified y: -102.8 => -102.81 to avoid intersection
+  place OutsideCasing x=0 y=-41.5 z=756.35 parent=TargetMotherVol
+  place CasingWater x=0 y=-41.5 z=756.35 parent=TargetMotherVol
+  place InsideCasing x=0 y=-41.5 z=756.35 parent=TargetMotherVol
+  place TargetDnFlange x=0 y=-41.5 z=1493.85 parent=TargetMotherVol
+  place TargetDnBeWindow x=0 y=0 z=1499.35 parent=TargetMotherVol
+  place TargetUpFlange x=0 y=-41.5 z=18.85 parent=TargetMotherVol
+  place TargetUpBeFlange z=0 parent=TargetMotherVol
+  place TargetUpBeWindow x=0 y=0 z=0.12700000000001 parent=TargetMotherVol  
+  place PressingPlate x=-14.501 y=-102.81 z=784.85 parent=TargetMotherVol
+  place CoolingWater x=14.501 y=-66.05 z=784.85 parent=TargetMotherVol #color=0,0,1
+  place CoolingWater x=14.501 y=-139.55 z=784.85 parent=TargetMotherVol #color=0,0,1
+  place CoolingPlate x=14.501 y=-102.81 z=784.85 parent=TargetMotherVol #color=1,0,0,0.2
+  place TargetMotherVol color='' z=0
+endgroup
+
+#place TargetMother z=0
+#exit
+
+tube sFAKE outerRadius=300 innerRadius=0 length=0.02 material=Vacuum # TODO: material=DecayPipeVacuum
+group TGAR width=8500 height=8500 length=52398 material=Air
+  place ConcreteSection0and4 x=3360.73 y=2801 z=0
+  place ConcreteSection1and3 x=2606.7 y=0 z=0
+  place ConcreteSection2 x=0 y=-2801 z=0
+  place ConcreteSection1and3 x=-2606.7 y=0 z=0
+  place ConcreteSection0and4 x=-3360.73 y=2801 z=0
+  place ConcreteSection5 x=0 y=3456.65 z=0
+  place DuratekBlock x=0 y=-2038.95 z=0
+  place DuratekBlock x=1355.4 y=-2038.95 z=0
+  place DuratekBlock x=-1355.4 y=-2038.95 z=0
+  place DuratekBlock x=1715.8 y=-1038.95 z=0 rotation=Z-90
+  place DuratekBlock x=690.4 y=-1368.95 z=0
+  place DuratekBlock x=-690.4 y=-1368.95 z=0
+  place DuratekBlock x=-1715.8 y=-1038.95 z=0 rotation=Z-90
+  place DuratekBlock x=1025.4 y=-368.95 z=0 rotation=Z-90
+  place DuratekBlock x=-1025.4 y=-368.95 z=0 rotation=Z-90
+  place DuratekBlock x=1715.8 y=291.05 z=0 rotation=Z-90
+  place DuratekBlock x=-1715.8 y=291.05 z=0 rotation=Z-90
+  place DuratekBlock x=1025.4 y=961.05 z=0 rotation=Z-90
+  place DuratekBlock x=-1025.4 y=961.05 z=0 rotation=Z-90
+  place DuratekBlock x=1715.8 y=1621.05 z=0 rotation=Z-90
+  place DuratekBlock x=-1715.8 y=1621.05 z=0 rotation=Z-90
+  place DuratekBlockCovering x=690.4 y=1983.95 z=0
+  place DuratekBlockCovering x=-690.4 y=1983.95 z=0
+  place DuratekBlock x=0 y=1293.55 z=0
+  place DuratekBlockgnumiA x=0 y=-993.215 z=0
+  place DuratekBlockgnumiBC x=637.3 y=-37.7 z=0
+  place DuratekBlockgnumiBC x=-637.3 y=-37.7 z=0
+  place DuratekBlockgnumiD x=0 y=657.075 z=-13849
+  place DuratekBlockgnumiD2 x=0 y=657.075 z=15349.5
+  place DuratekBlockgnumiD3 x=0 y=722.075 z=1501
+  place Baffle x=0 y=0 z=-22549
+  place MHorn1 x=0 y=0 z=-19469 front=1
+  place MHorn2 x=0 y=0 z=-321.1 front=1
+  place TargetMother x=0 y=0 z=-21093.35 front=1
+  place sFAKE x=0 y=0 z=-25499
+endgroup
+
+#place TGAR z=0
+#fieldlines radius=100 center=0,120,-18669 nLines=1000 color=1,0,0 # test field within the horn around the neck
+#printfield type=print z=-18669 field=Btot layout=xy drow=10 dcol=10 nrow=10 ncol=10 
+#virtualdetector test1 length=10 radius=2000 color=1,1,0
+#place test1 z=-18669
+#fieldlines radius=200 center=0,200,700 nLines=500 color=1,0,0 # test the magnetic field around the neck
+#printfield type=print z=700 field=Btot layout=xy drow=20 dcol=20 nrow=10 ncol=10 
+#virtualdetector test2 length=10 radius=2000 color=1,1,0
+#place test2 z=700
+
+box MuMonAlcvShot width=3657.6 height=3657.6 length=101.6 material=Shotcrete
+
+group MuMonAlcv_1 width=3657.6 height=3657.6 length=3232.48528000001 material=Air
+  place MuMonAlcvShot rename=+MuMonAlcvShot_1_Up x=0 y=0 z=-1565.44264
+  place MuMonAlcvShot rename=+MuMonAlcvShot_1_Down x=0 y=0 z=1565.44264
+  place MuMon x=0 y=-89.7821457283897 z=0
+endgroup
+
+group MuMonAlcv_2 width=3657.6 height=3657.6 length=3307.03936 material=Air
+  place MuMonAlcvShot rename=+MuMonAl_2_Up x=0 y=0 z=-1602.71968
+  place MuMonAlcvShot rename=+MuMonAl_2_Down x=0 y=0 z=1602.71968
+  place MuMon x=0 y=-98.3946582231805 z=0
+endgroup
+
+group ROCK width=20000 height=20000 length=2400000 material=Vacuum # TODO: material=DoloStone
+  place TUNE x=0 y=0 z=392419.25 front=1 # placing nested group
+  place TGAR x=0 y=0 z=19499 #front=1 - not autosized group, no need
+  place MuMonAlcv_1 x=0 y=89.6293474429211 z=752952.582342852 rotation=X-3.34320873458835 # no need for front=1
+  place MuMonAlcv_2 x=0 y=98.2272024895957 z=774110.760066162 rotation=X-3.34320873458835 # no need for front=1
+endgroup
+
+place ROCK z=0
+#fieldlines radius=100 center=0,120,800 nLines=1000 color=1,0,0 # test field within the horn around the neck
+#printfield type=print z=800 field=Btot layout=xy drow=10 dcol=10 nrow=10 ncol=10 
+#virtualdetector test3 length=10 radius=2000 color=1,1,0
+#place test3 z=800
+
+
+
+#zntuple det z=0 file=det.dat format=ascii
+#zntuple hadron2 z=722946 file=hadron2.dat format=ascii
